@@ -1,0 +1,431 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Attachment;
+use App\Card;
+use App\card_plus;
+use App\Card_type;
+use App\Package_type;
+use App\User;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
+class CardController extends Controller
+{
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        $package = Package_type::where('status_staff',1)->get();
+        $card = Card_type::all();
+        $user = User::all();
+        return view('cards.add', compact('package', 'card', 'user'));
+    }
+
+    public function add_group_cards(){
+        $package = Package_type::where('status_staff',1)->get();
+        $card = Card_type::all();
+        $user = User::all();
+        return view('cards.add-group', compact('package', 'card', 'user'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        $user = Auth::user()->id;
+
+
+        $message = [
+                'name.required' => 'Please Add Customer Name',
+                'name.unique' => 'Customer Already Exist',
+                'cpr.required' => 'Please Add CPR NO. To Group',
+                'cpr.unique' => 'Customer CPR Already Exist',
+                'cpr.max' => 'CPR Number Max Value is 13',
+            ];
+            
+
+        if($request->group_company == 1){
+            $message = [
+                'name.required' => 'Please Add Group Name',
+                'name.unique' => 'Group Already Exist',
+                'cpr.required' => 'Please Add CR NO. To Group',
+                'cpr.unique' => 'Company CR Already Exist',
+                'cpr.max' => 'CR Number Max Value is 13',
+            ];
+        }
+
+        if ($request->card_type == 1){
+            $card = new Card();
+            $request->validate([
+                'name' => 'required',
+                'cpr' => 'required|unique:cards,cpr_no|max:13',
+
+            ], $message);
+        }else{
+            $card = new card_plus();
+            $request->validate([
+                'name' => 'required',
+                'cpr' => 'required|unique:card_pluses,cpr_no|max:13',
+
+            ], $message);
+        }
+
+        $card->name = $request->name;
+        $card->first_issue_date = $request->date;
+        $card->cpr_no =  str_replace(' ', '', $request->cpr);
+        $card->email = $request->email;
+        $card->date = $request->date;
+        $card->agent_id = $user;
+        $card->mobile = $request->mobile;
+        $card->phone = $request->phone;
+
+        if($request->group_company == 0){
+            $card->gender = $request->gender;
+            $card->house = $request->house;
+            $card->road = $request->road;
+            $card->block = $request->block;
+            $card->place = $request->place;
+            $card->country = $request->country;
+        }
+
+        $card->card_type_id = $request->card_type;
+        $card->payment_method = $request->payment_method;
+        $card->contact_method = $request->contact_method;
+        $card->package_type = $request->package;
+        $card->price = $card->Package->package_prices;
+        $card->period = $request->period;
+        // $card->status = $request->status;
+        $card->comment = $request->comment;
+        $card->father_id = $request->cpr;      
+        $card->group_company = $request->group_company;
+
+
+
+        // $date1=date_create($request->date);
+        // $date2=date_create(date('Y-m-d', strtotime(date('Y-m-d') . "+2 week")));
+        // $diff=date_diff($date1, $date2);
+        
+
+        // if(strtotime(date('Y-m-d')) > strtotime($request->date)){
+        //     $card->status = 'expired';
+        // } 
+        // else if($diff->format("%a") <= 14){
+        //     $card->status = 'renewal';
+        // } else{
+            $card->status = $request->status;
+        // }
+        
+        
+        if (!($request->customer_img == null)) {
+            $image = $request->customer_img;
+            $file_name = $image->getClientOriginalName();
+
+            $card->img = $file_name;
+            // move pic
+            $imageName = $request->customer_img->getClientOriginalName();
+            $request->customer_img->move(public_path('customer_img/' . $request->cpr), $imageName);
+        }
+
+        $date_s = Carbon::createFromFormat('Y-m-d', $request->date);
+        if ($request->period == '3Months') {
+            $date = 3;
+            $date_new = $date_s->addMonth($date);
+            $card->expiry = $date_new;
+            $card->last_expiry = $date_new;
+        } elseif ($request->period == '4Months') {
+            $date = 4;
+            $date_new = $date_s->addMonth($date)->toDateString();
+            $card->expiry = $date_new;
+            $card->last_expiry = $date_new;
+        } elseif ($request->period == '5Months') {
+            $date = 5;
+            $date_new = $date_s->addMonth($date)->toDateString();
+            $card->expiry = $date_new;
+            $card->last_expiry = $date_new;
+        } elseif ($request->period == '1Year') {
+            $date = 1;
+            $date_new = $date_s->addYear($date)->toDateString();
+            $card->expiry = $date_new;
+            $card->last_expiry = $date_new;
+        } elseif ($request->period == '2Years') {
+            $date = 2;
+            $date_new = $date_s->addYear($date)->toDateString();
+            $card->expiry = $date_new;
+            $card->last_expiry = $date_new;
+        } elseif ($request->period == '5Years') {
+            $date = 5;
+            $date_new = $date_s->addYear($date)->toDateString();
+            $card->expiry = $date_new;   
+            $card->last_expiry = $date_new;
+        } else {
+            session()->flash('error', 'Data has been Error');
+        }
+        $card->save();
+        session()->flash('add', 'Data has been added successfully');
+        
+        if($request->email){
+            mailSend($card);
+        }
+
+        if ($request->card_type == 1){
+            return redirect('/profile/' . $card->cpr_no);
+
+        }else{
+            return redirect('/profile_plus/' . $card->cpr_no);
+
+        }    
+    }
+
+
+    public function store_more(Request $request)
+    {
+        $user = Auth::user()->id;
+        $request->validate([
+            'name' => 'required',
+            'cpr' => 'required|unique:cards,cpr_no|max:13',
+
+        ], [
+            'name.required' => 'Please Add Customer Name',
+            'name.unique' => 'Customer Already Exist',
+            'cpr.required' => 'Please Add CPR NO. To Customer',
+            'cpr.unique' => 'Customer CPR Already Exist',
+            'cpr.max' => 'CPR Number Max Value is 13',
+        ]);
+
+        $card = new Card();
+        $card->name = $request->name;
+        $card->cpr_no = $request->cpr;
+        $card->first_issue_date = $request->date;
+        $card->email = $request->email;
+        $card->date = $request->date;
+        $card->agent_id = $user;
+        $card->gender = $request->gender;
+        $card->mobile = $request->mobile;
+        $card->phone = $request->phone;
+        $card->house = $request->house;
+        $card->road = $request->road;
+        $card->block = $request->block;
+        $card->place = $request->place;
+        $card->country = $request->country;
+        $card->card_type_id = $request->card_type;
+        $card->payment_method = $request->payment_method;
+        $card->contact_method = $request->contact_method;
+        $card->package_type = $request->package;
+        $card->period = $request->period;
+        $card->status = $request->status;
+        $card->comment = $request->comment;
+        $card->father_id = $request->id_inp;
+        $card->price = $card->Package->package_prices;
+
+        if (!($request->customer_img == null)) {
+            $image = $request->customer_img;
+            $file_name = $image->getClientOriginalName();
+
+            $card->img = $file_name;
+            // move pic
+            $imageName = $request->customer_img->getClientOriginalName();
+            $request->customer_img->move(public_path('customer_img/' . $request->cpr), $imageName);
+        }
+
+        $date_s = Carbon::createFromFormat('Y-m-d', $request->date);
+        if ($request->period == '3Months') {
+            $date = 3;
+            $date_new = $date_s->addMonth($date);
+            $card->expiry = $date_new;
+
+        } elseif ($request->period == '4Months') {
+            $date = 4;
+            $date_new = $date_s->addMonth($date)->toDateString();
+            $card->expiry = $date_new;
+        } elseif ($request->period == '5Months') {
+            $date = 5;
+            $date_new = $date_s->addMonth($date)->toDateString();
+            $card->expiry = $date_new;
+        } elseif ($request->period == '1Year') {
+            $date = 1;
+            $date_new = $date_s->addYear($date)->toDateString();
+            $card->expiry = $date_new;
+        } elseif ($request->period == '2Years') {
+            $date = 2;
+            $date_new = $date_s->addYear($date)->toDateString();
+            $card->expiry = $date_new;
+        } elseif ($request->period == '5Years') {
+            $date = 5;
+            $date_new = $date_s->addYear($date)->toDateString();
+            $card->expiry = $date_new;
+        } else {
+            session()->flash('error', 'Data has been Error');
+        }
+        $card->save();
+
+if($request->email){
+        mailSend($card);
+}
+        session()->flash('add', 'Data has been added successfully');
+        return redirect('/profile/' . $card->cpr_no);
+    }
+    
+    
+      public function store_more_plus(Request $request)
+    {
+        $user = Auth::user()->id;
+        $request->validate([
+            'name' => 'required',
+            'cpr' => 'required|unique:cards,cpr_no|max:13',
+
+        ], [
+            'name.required' => 'Please Add Customer Name',
+            'name.unique' => 'Customer Already Exist',
+            'cpr.required' => 'Please Add CPR NO. To Customer',
+            'cpr.unique' => 'Customer CPR Already Exist',
+            'cpr.max' => 'CPR Number Max Value is 13',
+        ]);
+
+        $card = new card_plus();
+        $card->name = $request->name;
+        $card->cpr_no = $request->cpr;
+        $card->first_issue_date = $request->date;
+        $card->email = $request->email;
+        $card->date = $request->date;
+        $card->agent_id = $user;
+        $card->gender = $request->gender;
+        $card->mobile = $request->mobile;
+        $card->phone = $request->phone;
+        $card->house = $request->house;
+        $card->road = $request->road;
+        $card->block = $request->block;
+        $card->place = $request->place;
+        $card->country = $request->country;
+        $card->card_type_id = $request->card_type;
+        $card->payment_method = $request->payment_method;
+        $card->contact_method = $request->contact_method;
+        $card->package_type = $request->package;
+        $card->period = $request->period;
+        $card->status = $request->status;
+        $card->comment = $request->comment;
+        $card->father_id = $request->id_inp;
+        $card->price = $card->Package->package_prices;
+
+        if (!($request->customer_img == null)) {
+            $image = $request->customer_img;
+            $file_name = $image->getClientOriginalName();
+
+            $card->img = $file_name;
+            // move pic
+            $imageName = $request->customer_img->getClientOriginalName();
+            $request->customer_img->move(public_path('customer_img/' . $request->cpr), $imageName);
+        }
+
+        $date_s = Carbon::createFromFormat('Y-m-d', $request->date);
+        if ($request->period == '3Months') {
+            $date = 3;
+            $date_new = $date_s->addMonth($date);
+            $card->expiry = $date_new;
+
+        } elseif ($request->period == '4Months') {
+            $date = 4;
+            $date_new = $date_s->addMonth($date)->toDateString();
+            $card->expiry = $date_new;
+        } elseif ($request->period == '5Months') {
+            $date = 5;
+            $date_new = $date_s->addMonth($date)->toDateString();
+            $card->expiry = $date_new;
+        } elseif ($request->period == '1Year') {
+            $date = 1;
+            $date_new = $date_s->addYear($date)->toDateString();
+            $card->expiry = $date_new;
+        } elseif ($request->period == '2Years') {
+            $date = 2;
+            $date_new = $date_s->addYear($date)->toDateString();
+            $card->expiry = $date_new;
+        } elseif ($request->period == '5Years') {
+            $date = 5;
+            $date_new = $date_s->addYear($date)->toDateString();
+            $card->expiry = $date_new;
+        } else {
+            session()->flash('error', 'Data has been Error');
+        }
+        $card->save();
+        session()->flash('add', 'Data has been added successfully');
+        return redirect('/profile_plus/' . $card->cpr_no);
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param \App\Card $card
+     * @return \Illuminate\Http\Response
+     */
+    public function show(Card $card)
+    {
+        //
+    }
+    
+    public function getproducts($id)
+    {
+        $products = DB::table('package_types')->where('card_id',$id)->where('status_staff',1)->pluck('name','id');
+        return json_encode($products);
+
+
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param \App\Card $card
+     * @return \Illuminate\Http\Response
+     */
+    public function edit(Card $card)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Card $card
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, Card $card)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param \App\Card $card
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(Card $card)
+    {
+        //
+    }
+}
