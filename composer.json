@@ -11,7 +11,7 @@
         "php": "^8.0.25",
         "barryvdh/laravel-dompdf": "^2.0",
         "elibyy/tcpdf-laravel": "^10.0",
-        "fideloper/proxy": "^4.4",
+        "fruitcake/laravel-cors": "^3.0",
         "fx3costa/laravelchartjs": "^2.8",
         "guzzlehttp/guzzle": "^6.3.1|^7.0.1",
         "laravel/framework": "9.34.0",
