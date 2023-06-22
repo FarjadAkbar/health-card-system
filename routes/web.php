@@ -23,7 +23,9 @@ use App\Http\Controllers\HospitalContactController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\MailController;
 use App\Http\Controllers\MailTemplateController;
+
 use App\GeneralInfo;
+
 use App\Card;
 
 
@@ -222,9 +224,7 @@ Route::get('profile/package_prices_plus/{id}/{id2}',[CardProfile::class,'package
 Route::get('profile/package_name/{id}/{id2}',[CardProfile::class,'package_name'])->name('package.prices.name');
 Route::get('profile/package_name_plus/{id}/{id2}',[CardProfile::class,'package_name_plus'])->name('package.prices.name.plus');
 Route::get('profile/balance/{id}/{id2}',[CardProfile::class,'balance'])->name('package.prices.balance');
-
-Route::get('profile/balance_plus/{id}/{id2}',[CardProfile::class,'balance_plus'])->name('package.prices.balance_plus');
-
+Route::get('profile/balance_plus/{id}/{id2}',[CardProfile::class,'balance_plus'])->name('package.prices.balance');
 Route::get('profile/delivery/{id}/{id2}/{id3}',[CardProfile::class,'delivery'])->name('package.prices.delivery');
 Route::get('profile/delivery_plus/{id}/{id2}/{id3}',[CardProfile::class,'delivery_plus'])->name('package.prices.delivery.plus');
 Route::get('profile/editPackagePrice/{id}/{id2}',[CardProfile::class,'editPackagePrice'])->name('package.prices.editPackagePrice');
@@ -243,8 +243,8 @@ Route::post('/home_slider_delete',[\App\Http\Controllers\HomeController::class,'
 Route::get('provider_report',[reportController::class,'provider_index'])->name('report.provider_report');
 Route::post('provider_report_search',[reportController::class,'reportprovider'])->name('report.provider_report_search');
 
-Route::get('/company_info',[\App\Http\Controllers\GeneralInfoController::class,'index']);
-Route::post('/company_info',[\App\Http\Controllers\GeneralInfoController::class,'store']);
+Route::get('/company_info',[\App\Http\Controllers\GeneralInfoController::class,'index'])->name('setting.company_info');
+Route::post('/company_info',[\App\Http\Controllers\GeneralInfoController::class,'store'])->name('setting.company_info');
 
 //Providers
 Route::get('category/provider',[ProviderController::class,'index'])->name('category.provider');
@@ -293,8 +293,8 @@ Route::group(
         Route::get('hospital/directory/plus/{id}',[HospitalDirectoryController::class,'index_hospital'])->name('hospital.directory.all.plus');
 
     Route::get('hospital/category/{id}',[HospitalDirectoryController::class,'hospital_category'])->name('hospital.category.show');
-    Route::get('hospital/directory/search',[HospitalDirectoryController::class,'hospital_search_page']);
-    Route::post('hospital/directory/search',[HospitalDirectoryController::class,'hospital_search']);
+    Route::get('hospital/directory/search',[HospitalDirectoryController::class,'hospital_search_page'])->name('hospital.directory.search');
+    Route::post('hospital/directory/search',[HospitalDirectoryController::class,'hospital_search'])->name('hospital.directory.search');
     Route::post('hospital/directory/search/mobile',[HospitalDirectoryController::class,'hospital_search_phone'])->name('hospital.directory.search.mobile');
         Route::get('hospital/hospital_mobile',[HospitalDirectoryController::class,'index2']);
          Route::get('hospital/directory/plus',[HospitalDirectoryController::class,'index_plus_view'])->name('hospital.directory.plus');
@@ -314,15 +314,15 @@ Route::group(
     // Apply Card
     Route::get('/apply/{id?}',[ApplyCardController::class,'index'])->name('apply.view')->where('id', '[0-9]+');
         Route::get('apply_plus/{id?}',[ApplyCardController::class,'index_plus'])->name('apply.view.plus')->where('id', '[0-9]+');
-            Route::post('public/apply/add/plus',[ApplyCardController::class,'store_plus']);
-    Route::post('save/apply/add/plus',[ApplyCardController::class,'store_plus']);
+            Route::post('public/apply/add/plus',[ApplyCardController::class,'store_plus'])->name('apply.add.plus');
+    Route::post('save/apply/add/plus',[ApplyCardController::class,'store_plus'])->name('apply.add.plus');
 
 
     Route::get('/apply_mobile/{id?}',[ApplyCardController::class,'index2'])->name('apply.view.mobile')->where('id', '[0-9]+');
     Route::post('public_add_card',[ApplyCardController::class,'store'])->name('apply.add');
     // Search Card
-    Route::get('/check',[SearchCardController::class,'index']);
-    Route::get('public_search_card/cpr',[SearchCardController::class,'index']);
+    Route::get('/check',[SearchCardController::class,'index'])->name('search.card');
+    Route::get('public_search_card/cpr',[SearchCardController::class,'index'])->name('search.card');
     
     
     Route::post('public_search_card/cpr',[SearchCardController::class,'search'])->name('search.card.cpr');
